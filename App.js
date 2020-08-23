@@ -19,7 +19,8 @@ class App extends React.Component {
     error: false,
     models: null,
     user: null,
-    socket: null
+    socket: null,
+    authProvider: null
   }
 
   componentDidMount() {
@@ -29,19 +30,37 @@ class App extends React.Component {
   fetch() {
     adapter.connect().then((models) => {
       const authProvider = adapter.getAuthProvider();
-      authProvider.get().then((user) => {
-        console.log('got connection, got user');
-        const socket = io(`${host}:${port}`);
-        socket.on('connect', () => {
-          this.setState({ ready: true, models, user, socket });
-        });
-      }).catch(() => {
-        console.log('got connection, no user');
-        this.setState({ ready: true, models });
+      const socket = io(`${host}:${port}`);
+      socket.on('connect', () => {
+        this.setState({ authProvider, ready: true, models, socket });
       });
+      // authProvider.get().then((user) => {
+      //   console.log('got connection, got user');
+      //   const socket = io(`${host}:${port}`);
+      //   socket.on('connect', () => {
+      //     this.setState({ ready: true, models, user, socket });
+      //   });
+      // }).catch(() => {
+      //   console.log('got connection, no user');
+      //   this.setState({ ready: true, models });
+      // });
     }).catch((err) => {
       console.log('no connection');
       this.setState({ ready: true, error: err });
+    });
+  }
+
+  afterLogin() {
+    const { authProvider } = this.state;
+    authProvider.get().then((user) => {
+      console.log('got connection, got user');
+      const socket = io(`${host}:${port}`);
+      socket.on('connect', () => {
+        this.setState({ ready: true, user });
+      });
+    }).catch(() => {
+      console.log('got connection, no user');
+      this.setState({ ready: true });
     });
   }
 
@@ -55,7 +74,7 @@ class App extends React.Component {
             user ? (
               <Home user={user} socket={socket} models={models} />
             ) : (
-                <Unauthenticated models={models} afterLogin={this.fetch.bind(this)} authProvider={adapter.getAuthProvider()} />
+                <Unauthenticated models={models} afterLogin={this.afterLogin.bind(this)} authProvider={adapter.getAuthProvider()} />
               )
           )
       ) : (

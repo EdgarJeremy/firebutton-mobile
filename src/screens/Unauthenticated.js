@@ -93,7 +93,10 @@ class Unauthenticated extends React.Component {
         const { authProvider, afterLogin } = this.props;
         const data = this.state.loginData;
         this.setState({ loading: true });
-        authProvider.set(data).then((user) => afterLogin()).catch((err) => alert('Login error'));
+        authProvider.set(data).then((user) => afterLogin()).catch((err) => {
+            alert('Login error');
+            this.setState({ loading: false });
+        });
     }
 
     onDaftar() {
@@ -121,6 +124,7 @@ class Unauthenticated extends React.Component {
         } else {
             alert('Password tidak cocok!');
         }
+        this.setState({ loading: false });
     }
 
     render() {

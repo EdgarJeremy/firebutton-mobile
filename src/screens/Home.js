@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableNativeFeedback, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableNativeFeedback, TouchableOpacity, Image, StyleSheet, PermissionsAndroid } from 'react-native';
 import ImagePicker from 'react-native-image-picker';
 import Geolocation from '@react-native-community/geolocation';
 
@@ -33,33 +33,55 @@ export default class Home extends React.Component {
         hasPanic: false
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         const { socket } = this.props;
-        Geolocation.getCurrentPosition((position) => this.setState({ position }));
-        Geolocation.watchPosition((position) => this.setState({ position }));
-        socket.off('respond');
-        socket.on('respond', () => {
-            this.setState({ hasPanic: false });
-            alert('Petugas pemadam kebakaran segera datang!');
-        });
+        try {
+            const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            );
+            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                Geolocation.getCurrentPosition((position) => this.setState({ position }));
+                Geolocation.watchPosition((position) => this.setState({ position }));
+                socket.off('respond');
+                socket.on('respond', () => {
+                    this.setState({ hasPanic: false });
+                    alert('Petugas pemadam kebakaran segera datang!');
+                });
+            } else {
+                console.log("Location permission denied");
+            }
+        } catch (err) {
+            console.warn(err);
+        }
     }
 
-    onPanic() {
+    async onPanic() {
         const { socket, user } = this.props;
         const { position } = this.state;
-        ImagePicker.launchCamera({
-            title: 'Foto Kejadian',
-            storageOptions: {
-                skipBackup: true
+        try {
+            const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.CAMERA,
+            );
+            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                // alert('camera granted');
+                ImagePicker.launchCamera({
+                    title: 'Foto Kejadian',
+                    storageOptions: {
+                        skipBackup: true
+                    }
+                }, (response) => {
+                    this.setState({ hasPanic: true });
+                    socket.emit('panic', {
+                        user, position,
+                        photo: response.data
+                    });
+                });
+            } else {
+                console.log("Camera permission denied");
             }
-        }, (response) => {
-            console.log(response);
-            this.setState({ hasPanic: true });
-            socket.emit('panic', {
-                user, position,
-                photo: response.data
-            });
-        });
+        } catch (err) {
+            console.warn(err);
+        }
     }
 
     render() {
