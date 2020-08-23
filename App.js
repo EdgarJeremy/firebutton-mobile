@@ -7,7 +7,10 @@ import NoConnection from './src/screens/NoConnection';
 import Home from './src/screens/Home';
 import Loading from './src/screens/Loading';
 
-const adapter = new SiriusAdapter('http://10.0.2.2', 1234, AsyncStorage);
+const host = 'http://firebutton.harusnyasihbisa.com';
+const port = 80;
+
+const adapter = new SiriusAdapter(host, port, AsyncStorage);
 
 class App extends React.Component {
 
@@ -28,7 +31,7 @@ class App extends React.Component {
       const authProvider = adapter.getAuthProvider();
       authProvider.get().then((user) => {
         console.log('got connection, got user');
-        const socket = io('http://10.0.2.2:1234');
+        const socket = io(`${host}:${port}`);
         socket.on('connect', () => {
           this.setState({ ready: true, models, user, socket });
         });
@@ -36,9 +39,9 @@ class App extends React.Component {
         console.log('got connection, no user');
         this.setState({ ready: true, models });
       });
-    }).catch(() => {
+    }).catch((err) => {
       console.log('no connection');
-      this.setState({ ready: true, error: true });
+      this.setState({ ready: true, error: err });
     });
   }
 
@@ -47,7 +50,7 @@ class App extends React.Component {
     return (
       ready ? (
         error ? (
-          <NoConnection />
+          <NoConnection error={error} />
         ) : (
             user ? (
               <Home user={user} socket={socket} models={models} />

@@ -53,6 +53,7 @@ export default class Home extends React.Component {
                 skipBackup: true
             }
         }, (response) => {
+            console.log(response);
             this.setState({ hasPanic: true });
             socket.emit('panic', {
                 user, position,
