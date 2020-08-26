@@ -34,16 +34,6 @@ class App extends React.Component {
       socket.on('connect', () => {
         this.setState({ authProvider, ready: true, models, socket });
       });
-      // authProvider.get().then((user) => {
-      //   console.log('got connection, got user');
-      //   const socket = io(`${host}:${port}`);
-      //   socket.on('connect', () => {
-      //     this.setState({ ready: true, models, user, socket });
-      //   });
-      // }).catch(() => {
-      //   console.log('got connection, no user');
-      //   this.setState({ ready: true, models });
-      // });
     }).catch((err) => {
       console.log('no connection');
       this.setState({ ready: true, error: err });

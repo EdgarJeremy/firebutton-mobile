@@ -30,7 +30,8 @@ export default class Home extends React.Component {
 
     state = {
         position: null,
-        hasPanic: false
+        hasPanic: false,
+        loading: false
     }
 
     async componentDidMount() {
@@ -56,7 +57,7 @@ export default class Home extends React.Component {
     }
 
     async onPanic() {
-        const { socket, user } = this.props;
+        const { socket, user, models } = this.props;
         const { position } = this.state;
         try {
             const granted = await PermissionsAndroid.request(
@@ -69,12 +70,15 @@ export default class Home extends React.Component {
                     storageOptions: {
                         skipBackup: true
                     }
-                }, (response) => {
-                    this.setState({ hasPanic: true });
-                    socket.emit('panic', {
-                        user, position,
+                }, async (response) => {
+                    this.setState({ hasPanic: true, loading: true });
+                    await models.Report.create({
+                        user_id: user.id,
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
                         photo: response.data
                     });
+                    this.setState({ loading: false });
                 });
             } else {
                 console.log("Camera permission denied");
@@ -85,7 +89,7 @@ export default class Home extends React.Component {
     }
 
     render() {
-        const { position, hasPanic } = this.state;
+        const { position, hasPanic, loading } = this.state;
         return (
             <View style={{ alignItems: 'center', alignContent: 'center', backgroundColor: '#17191c', flex: 1, justifyContent: 'center' }}>
                 {position && <Text style={styles.info}>Koordinat anda : {position.coords.latitude},{position.coords.longitude}</Text>}
@@ -95,7 +99,7 @@ export default class Home extends React.Component {
                         fontSize: 50,
                         color: '#a4564e',
                         fontWeight: 'bold'
-                    }}>PANIK!!</Text>
+                    }}>{!loading ? 'PANIK!!' : 'MENGIRIM LAPORAN..'}</Text>
                 </TouchableOpacity>
             </View>
         )
